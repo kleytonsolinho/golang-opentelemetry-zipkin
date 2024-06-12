@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  server1:
+    image: server-one
+    build:
+      context: .
+      dockerfile: Dockerfile.server1
+    ports:
+      - "8080:8080"
+    networks:
+      - mynetwork
+  
+  server2:
+    image: server-two
+    build:
+      context: .
+      dockerfile: Dockerfile.server2
+    ports:
+      - "8081:8081"
+    networks:
+      - mynetwork
+
+networks:
+  mynetwork:
+    driver: bridge
