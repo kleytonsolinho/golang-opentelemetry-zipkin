@@ -1,0 +1,10 @@
+FROM golang:latest as build
+WORKDIR /app
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o serverone ./server1/cmd/server
+
+FROM alpine
+WORKDIR /app
+COPY --from=build /app/serverone .
+RUN apk add --no-cache ca-certificates
+CMD ["./serverone"]
