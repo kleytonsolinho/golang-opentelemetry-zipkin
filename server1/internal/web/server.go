@@ -49,7 +49,7 @@ func (we *Webserver) CreateServer() *chi.Mux {
 	router.Use(middleware.Timeout(60 * time.Second))
 
 	router.Handle("/metrics", promhttp.Handler())
-	router.Post("/cep", we.HandleRequest)
+	router.Post("/", we.HandleRequest)
 
 	return router
 }
