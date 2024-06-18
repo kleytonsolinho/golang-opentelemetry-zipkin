@@ -56,3 +56,27 @@ Para mais informações sobre Zipkin, você pode clicar aqui
 O código-fonte completo da implementação.
 Documentação explicando como rodar o projeto em ambiente dev.
 Utilize docker/docker-compose para que possamos realizar os testes de sua aplicação.
+
+### Como rodar a aplicação?
+
+1. **Requisitos:** 
+   - Certifique-se de ter o Go instalado em sua máquina.
+   - Certifique-se de ter o Docker instalado em sua máquina.
+
+```bash
+git clone https://github.com/kleytonsolinho/golang-opentelemetry-zipkin.git
+```
+&nbsp;
+3. **Acesse a pasta do app:**
+&nbsp;
+
+```bash
+cd golang-opentelemetry-zipkin
+```
+&nbsp;
+4. **Rode o docker para subir os serviços OpenZipkin, Prometheus, OpenTelemetry e os Servidores 1 e 2 :**
+&nbsp;
+
+```bash 
+docker-compose up -d
+```
