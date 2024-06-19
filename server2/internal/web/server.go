@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"log"
 	"net/http"
@@ -81,8 +82,8 @@ func (we *Webserver) HandleRequest(w http.ResponseWriter, r *http.Request) {
 	ctx, spanCep := we.TemplateData.OTELTracer.Start(ctx, "HandleRequest getCepViaCEP")
 	cep, err := getCepViaCEP(cepParams)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode("error getting zipcode")
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode("can not find zipcode")
 		return
 	}
 	spanCep.End()
@@ -142,6 +143,11 @@ func getCepViaCEP(cepParams string) (*CepResponse, error) {
 	}
 
 	log.Printf("Response ViaCEP: %v", resultCep)
+
+	if resultCep.Cep == "" {
+		log.Println("CEP não encontrado")
+		return nil, errors.New("CEP não encontrado")
+	}
 
 	return &resultCep, nil
 }
