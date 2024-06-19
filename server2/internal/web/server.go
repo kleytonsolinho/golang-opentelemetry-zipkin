@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"io"
@@ -80,7 +81,7 @@ func (we *Webserver) HandleRequest(w http.ResponseWriter, r *http.Request) {
 	cepParams := chi.URLParam(r, "cep")
 
 	ctx, spanCep := we.TemplateData.OTELTracer.Start(ctx, "HandleRequest getCepViaCEP")
-	cep, err := getCepViaCEP(cepParams)
+	cep, err := getCepViaCEP(ctx, cepParams)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		json.NewEncoder(w).Encode("can not find zipcode")
@@ -89,7 +90,7 @@ func (we *Webserver) HandleRequest(w http.ResponseWriter, r *http.Request) {
 	spanCep.End()
 
 	_, spanTemperature := we.TemplateData.OTELTracer.Start(ctx, "HandleRequest getTemperature")
-	temp, err := getTemperature(cep.Localidade)
+	temp, err := getTemperature(ctx, cep.Localidade)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		json.NewEncoder(w).Encode("error getting temperature")
@@ -114,14 +115,14 @@ func (we *Webserver) HandleRequest(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-func getCepViaCEP(cepParams string) (*CepResponse, error) {
-	req, err := http.NewRequest("GET", "http://viacep.com.br/ws/"+cepParams+"/json/", nil)
+func getCepViaCEP(ctx context.Context, cepParams string) (*CepResponse, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", "http://viacep.com.br/ws/"+cepParams+"/json/", nil)
 	if err != nil {
 		log.Printf("Erro ao fazer a requisição HTTP: %v\n", err)
 		return nil, err
 	}
 
-	otel.GetTextMapPropagator().Inject(req.Context(), propagation.HeaderCarrier(req.Header))
+	otel.GetTextMapPropagator().Inject(ctx, propagation.HeaderCarrier(req.Header))
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		log.Printf("Erro ao fazer a requisição HTTP: %v\n", err)
@@ -152,16 +153,16 @@ func getCepViaCEP(cepParams string) (*CepResponse, error) {
 	return &resultCep, nil
 }
 
-func getTemperature(locale string) (*TemperatureResponse, error) {
+func getTemperature(ctx context.Context, locale string) (*TemperatureResponse, error) {
 	escapedLocale := url.QueryEscape(locale)
 
-	req, err := http.NewRequest("GET", "https://api.weatherapi.com/v1/current.json?q="+escapedLocale+"&key=0893d285f33543a2a36184203240302", nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", "https://api.weatherapi.com/v1/current.json?q="+escapedLocale+"&key=0893d285f33543a2a36184203240302", nil)
 	if err != nil {
 		log.Printf("Erro ao fazer a requisição HTTP: %v\n", err)
 		return nil, err
 	}
 
-	otel.GetTextMapPropagator().Inject(req.Context(), propagation.HeaderCarrier(req.Header))
+	otel.GetTextMapPropagator().Inject(ctx, propagation.HeaderCarrier(req.Header))
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		log.Printf("Erro ao fazer a requisição HTTP: %v\n", err)
