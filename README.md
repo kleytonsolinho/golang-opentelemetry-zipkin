@@ -80,3 +80,6 @@ cd golang-opentelemetry-zipkin
 ```bash 
 docker-compose up -d
 ```
+&nbsp;
+5. **Execute o arquivo post-cep.http dentro da pasta api**
+&nbsp;
