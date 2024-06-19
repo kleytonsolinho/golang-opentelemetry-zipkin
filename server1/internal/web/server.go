@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"io"
 	"log"
@@ -84,10 +85,13 @@ func (we *Webserver) HandleRequest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cepAndTemperature, err := getCepAndTemperature(cepBody.Cep)
+	ctx, spanGetCep := we.TemplateData.OTELTracer.Start(ctx, "getCepAndTemperature")
+	defer spanGetCep.End()
+
+	cepAndTemperature, err := getCepAndTemperature(ctx, cepBody.Cep)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		json.NewEncoder(w).Encode("error getting zipcode")
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode("can not find zipcode")
 		return
 	}
 
@@ -123,14 +127,14 @@ func sanitizeString(str string) string {
 	return string(sanitized)
 }
 
-func getCepAndTemperature(cepParams string) (*Response, error) {
-	req, err := http.NewRequest("GET", "http://server2:8081/cep/"+cepParams+"", nil)
+func getCepAndTemperature(ctx context.Context, cepParams string) (*Response, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", "http://server2:8081/cep/"+cepParams+"", nil)
 	if err != nil {
 		log.Printf("Erro ao fazer a requisição HTTP: %v\n", err)
 		return nil, err
 	}
 
-	otel.GetTextMapPropagator().Inject(req.Context(), propagation.HeaderCarrier(req.Header))
+	otel.GetTextMapPropagator().Inject(ctx, propagation.HeaderCarrier(req.Header))
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
 		log.Printf("Erro ao fazer a requisição HTTP: %v\n", err)
